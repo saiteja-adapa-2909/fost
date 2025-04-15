@@ -1,8 +1,44 @@
 h1 {
+  /* font-size: 45px !important; */
+}
+
+p {
+  /* font-size: 20px !important; */
+}
+
+.main-head {
   font-size: 45px !important;
 }
 
-p{
-    font-size: 20px !important;
+.main-para {
+  font-size: 17px !important;
 }
 
+.nav-head {
+  font-size: 12px;
+}
+
+  .pic-container {
+    border-radius: 15px;
+    /* overflow: hidden;
+    width: 100%;
+    height: 100%; */
+  }
+
+.pic-style {
+  border-radius: 15px;
+
+  /* width: 120%; */
+  transform: scale(0.8); 
+  transform-origin: center;
+  background-size:cover;
+}
+
+.featured-para{
+  font-size: 15px !important;
+}
+
+.offer-class{
+  width:75px;
+  text-align: center;
+}
