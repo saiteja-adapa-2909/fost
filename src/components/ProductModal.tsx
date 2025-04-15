@@ -1,23 +1,25 @@
+// ProductModal.tsx
 import React, { useState } from 'react';
 import { Product } from '../types';
+import { useCart } from '../context/CartContext';
 
 interface ProductModalProps {
   product: Product;
-  quantity: number;
   onClose: () => void;
-  onQuantityChange: (action: 'increase' | 'decrease') => void;
-  onAddToCart: (product: Product, quantity: number, addons: Array<{name: string, price: number}>) => void;
   calculateOffer: (original: number, current: number) => number;
 }
 
 const ProductModal: React.FC<ProductModalProps> = ({
   product,
-  quantity,
   onClose,
-  onQuantityChange,
-  onAddToCart,
   calculateOffer,
 }) => {
+  // Use the cart context
+  const { addToCart } = useCart();
+  
+  // Local state for quantity
+  const [quantity, setQuantity] = useState(1);
+  
   // Define available add-ons
   const availableAddons = [
     { name: "Extra Vitamin Boost", price: 1.99 },
@@ -30,6 +32,15 @@ const ProductModal: React.FC<ProductModalProps> = ({
   const [selectedAddons, setSelectedAddons] = useState<Array<{name: string, price: number}>>([]);
   // State to show feedback when item is added to cart
   const [showAddedFeedback, setShowAddedFeedback] = useState(false);
+
+  // Handle quantity change
+  const handleQuantityChange = (action: 'increase' | 'decrease') => {
+    if (action === 'increase') {
+      setQuantity(quantity + 1);
+    } else if (action === 'decrease' && quantity > 1) {
+      setQuantity(quantity - 1);
+    }
+  };
 
   // Handle addon selection
   const handleAddonToggle = (addon: {name: string, price: number}) => {
@@ -50,7 +61,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
 
   // Handle add to cart with visual feedback
   const handleAddToCart = () => {
-    onAddToCart(product, quantity, selectedAddons);
+    addToCart(product, quantity, selectedAddons);
     setShowAddedFeedback(true);
     setTimeout(() => {
       setShowAddedFeedback(false);
@@ -80,7 +91,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
             <div className="flex items-center mb-4">
               <span className="text-3xl font-bold text-gray-900">${product.currentCost.toFixed(2)}</span>
               <span className="ml-3 text-xl text-gray-500 line-through">${product.originalCost.toFixed(2)}</span>
-              <span className="ml-3 bg-[#FF9EAA] text-white px-3 py-1 rounded-full text-sm">
+              <span className="ml-3 bg-pink-500 text-white px-3 py-1 rounded-full text-sm">
                 {calculateOffer(product.originalCost, product.currentCost)}% OFF
               </span>
             </div>
@@ -107,7 +118,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
               <span className="mr-4 text-gray-700">Quantity:</span>
               <div className="flex items-center border border-gray-300 rounded-md">
                 <button
-                  onClick={() => onQuantityChange('decrease')}
+                  onClick={() => handleQuantityChange('decrease')}
                   className="px-4 py-2 text-gray-600 hover:bg-gray-100"
                   disabled={quantity <= 1}
                 >
@@ -115,7 +126,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 </button>
                 <span className="px-6 py-2 text-gray-700">{quantity}</span>
                 <button
-                  onClick={() => onQuantityChange('increase')}
+                  onClick={() => handleQuantityChange('increase')}
                   className="px-4 py-2 text-gray-600 hover:bg-gray-100"
                 >
                   <i className="fas fa-plus"></i>

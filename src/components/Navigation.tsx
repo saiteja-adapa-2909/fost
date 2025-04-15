@@ -1,5 +1,8 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+// src/components/Navigation.tsx
+
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 interface NavigationProps {
   cartCount: number;
@@ -9,6 +12,21 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ cartCount, onNavigate, currentPage }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  
+  // Use the AuthContext
+  const { isAuthenticated, userData, logout } = useAuth();
+  
+  const handleLogout = async () => {
+    await logout();
+    setShowUserMenu(false);
+    navigate('/');
+  };
+  
+  const toggleUserMenu = () => {
+    setShowUserMenu(!showUserMenu);
+  };
   
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
@@ -55,7 +73,64 @@ const Navigation: React.FC<NavigationProps> = ({ cartCount, onNavigate, currentP
             <a href="#" className="text-gray-700 hover:text-[#FF9EAA] transition duration-300 font-medium">About</a>
             <a href="#" className="text-gray-700 hover:text-[#FF9EAA] transition duration-300 font-medium">Contact</a>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center space-x-4">
+            {/* Auth Links */}
+            <div className="hidden md:flex items-center space-x-4">
+              {isAuthenticated ? (
+                <div className="relative">
+                  <button 
+                    onClick={toggleUserMenu}
+                    className="flex items-center space-x-2 text-gray-700 hover:text-[#FF9EAA] transition duration-300 font-medium"
+                  >
+                    {userData?.photoURL ? (
+                      <img 
+                        src={userData.photoURL} 
+                        alt="User" 
+                        className="w-8 h-8 rounded-full"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-[#FF9EAA] flex items-center justify-center text-white">
+                        {userData?.name ? userData.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
+                    <span>
+                      {userData?.name || 'User'}
+                    </span>
+                  </button>
+                  
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <Link 
+                    to="/login"
+                    className={`text-gray-700 hover:text-[#FF9EAA] transition duration-300 font-medium ${
+                      location.pathname === '/login' ? 'text-[#FF9EAA]' : ''
+                    }`}
+                  >
+                    Login
+                  </Link>
+                  <Link 
+                    to="/register"
+                    className={`text-gray-700 hover:text-[#FF9EAA] transition duration-300 font-medium ${
+                      location.pathname === '/register' ? 'text-[#FF9EAA]' : ''
+                    }`}
+                  >
+                    Register
+                  </Link>
+                </>
+              )}
+            </div>
+            {/* Cart Icon */}
             <Link to="/cart" className="p-2 rounded-full hover:bg-gray-100 transition duration-300 relative">
               <i className="fas fa-shopping-cart text-gray-700"></i>
               <span className="absolute -top-1 -right-1 bg-[#FF9EAA] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">

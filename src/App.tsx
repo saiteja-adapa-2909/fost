@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import Hero from './components/Hero';
 import FeaturedProducts from './components/FeaturedProps'; // Import the new component
@@ -9,14 +9,26 @@ import Products from './pages/Products';
 import ProductInput from './pages/Vendor/ProductInputForm';
 import { Product, ToastNotification } from './types';
 import CartPage from './pages/CartPage';
+import { CartProvider, useCart } from './context/CartContext'; // Import the CartProvider and useCart hook
+import Login from './auth/Login';
+import Register from './auth/Register';
+import ForgotPassword from './auth/forgot';
+import { AuthProvider } from './context/AuthContext';
 
-const App: React.FC = () => {
+// Create a wrapper component that uses the cart context
+const AppContent: React.FC = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<null | Product>(null);
-  const [cartCount, setCartCount] = useState(3);
   const [toast, setToast] = useState<ToastNotification>({ message: '', visible: false });
   const [currentPage, setCurrentPage] = useState<'home' | 'products' | 'input'>('home');
+  const navigate = useNavigate();
+  
+  // Use the cart context
+  const { cartItems, addToCart } = useCart();
+  
+  // Get cart count from cart items
+  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   const showToast = useCallback((message: string, link?: string) => {
     setToast({ message, link, visible: true });
@@ -25,14 +37,25 @@ const App: React.FC = () => {
     }, 3000);
   }, []);
 
-  const handleAddToCart = useCallback((product: Product, qty: number) => {
-    setCartCount(prev => prev + qty);
-    const total = (product.currentCost * qty).toFixed(2);
+  const handleAddToCart = useCallback((product: Product, qty: number, addons: Array<{name: string, price: number}> = []) => {
+    // Use the addToCart function from the context
+    addToCart(product, qty, addons);
+    
+    // Calculate total including addons
+    const addonTotal = addons.reduce((sum, addon) => sum + addon.price, 0);
+    const unitPrice = product.currentCost + addonTotal;
+    const total = (unitPrice * qty).toFixed(2);
+    
     showToast(
       `Added ${qty} ${qty === 1 ? 'unit' : 'units'} of ${product.title} - $${total}`,
       'View Cart'
     );
-  }, [showToast]);
+  }, [showToast, addToCart]);
+
+  const handleToastLinkClick = useCallback(() => {
+    navigate('/cart');
+    setToast(prev => ({ ...prev, visible: false }));
+  }, [navigate]);
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
@@ -63,7 +86,7 @@ const App: React.FC = () => {
   const HomePage = () => (
     <>
       <Hero />
-      <FeaturedProducts 
+      <FeaturedProducts
         onProductClick={handleProductClick}
         calculateOffer={calculateOffer}
       />
@@ -71,35 +94,51 @@ const App: React.FC = () => {
   );
 
   return (
-    <BrowserRouter>
-      <div className="min-h-screen font-['Montserrat'] bg-gradient-to-br from-rose-50 via-white to-amber-50">
-        <Navigation cartCount={cartCount} onNavigate={handleNavigationClick} currentPage={currentPage} />
-        
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/input" element={<ProductInput />} />
-          <Route path="/cart" element={<CartPage/>} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+    <div className="min-h-screen font-['Montserrat'] bg-gradient-to-br from-rose-50 via-white to-amber-50">
+      <Navigation cartCount={cartCount} onNavigate={handleNavigationClick} currentPage={currentPage} />
+      
+      <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot" element={<ForgotPassword />} />
 
-        {selectedProduct && (
-          <ProductModal
-            product={selectedProduct}
-            quantity={quantity}
-            onClose={closeModal}
-            onQuantityChange={handleQuantityChange}
-            onAddToCart={handleAddToCart}
-            calculateOffer={calculateOffer}
-          />
-        )}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/products" element={<Products onProductClick={handleProductClick} />} />
+        <Route path="/input" element={<ProductInput />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
-        <Toast
-          toast={toast}
-          onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          quantity={quantity}
+          onClose={closeModal}
+          onQuantityChange={handleQuantityChange}
+          onAddToCart={handleAddToCart}
+          calculateOffer={calculateOffer}
         />
-      </div>
+      )}
+
+      <Toast
+        toast={toast}
+        onClose={() => setToast(prev => ({ ...prev, visible: false }))}
+        onLinkClick={handleToastLinkClick}
+      />
+    </div>
+  );
+};
+
+// Main App component that wraps everything with the CartProvider
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+    <BrowserRouter>
+      <CartProvider>
+        <AppContent />
+      </CartProvider>
     </BrowserRouter>
+    </AuthProvider>
   );
 };
 
