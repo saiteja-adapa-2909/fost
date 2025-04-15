@@ -1,13 +1,4 @@
-export interface Product {
-  id: number;
-  title: string;
-  description: string;
-  originalCost: number;
-  currentCost: number;
-  category: string;
-  tags: string[];
-  imageUrl: string;
-}
+
 
 export interface ToastNotification {
   message: string;
@@ -16,3 +7,17 @@ export interface ToastNotification {
 }
 
 export type SortOption = 'price-low' | 'price-high' | 'name-asc' | 'name-desc';
+
+export interface Product {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  originalCost: number;
+  currentCost: number;
+  imageUrl: string;
+  tags: string[];
+  inStock: boolean;
+  featured?: boolean;
+  createdAt?: any; // Firestore timestamp
+}

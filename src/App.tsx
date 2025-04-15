@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import * as echarts from 'echarts';
+import React, { useState, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import Hero from './components/Hero';
-import ProductCard from './components/ProductCard';
+import FeaturedProducts from './components/FeaturedProps'; // Import the new component
 import ProductModal from './components/ProductModal';
 import Toast from './components/Toast';
 import Products from './pages/Products';
-import { featuredProducts } from './data/products';
+import ProductInput from './pages/Vendor/ProductInputForm';
 import { Product, ToastNotification } from './types';
+import CartPage from './pages/CartPage';
 
 const App: React.FC = () => {
   const [activeSlide, setActiveSlide] = useState(0);
@@ -15,7 +16,7 @@ const App: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<null | Product>(null);
   const [cartCount, setCartCount] = useState(3);
   const [toast, setToast] = useState<ToastNotification>({ message: '', visible: false });
-  const [currentPage, setCurrentPage] = useState<'home' | 'products'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'products' | 'input'>('home');
 
   const showToast = useCallback((message: string, link?: string) => {
     setToast({ message, link, visible: true });
@@ -54,119 +55,51 @@ const App: React.FC = () => {
     }
   };
 
-  const handleNavigationClick = (page: 'home' | 'products') => {
+  const handleNavigationClick = (page: 'home' | 'products' | 'input') => {
     setCurrentPage(page);
   };
 
-  useEffect(() => {
-    const chartDom = document.getElementById('sales-chart');
-    if (chartDom) {
-      const myChart = echarts.init(chartDom);
-      const option = {
-        animation: false,
-        title: {
-          text: 'Monthly Sales 2025',
-          left: 'center',
-          textStyle: {
-            fontFamily: 'Montserrat, sans-serif'
-          }
-        },
-        tooltip: {
-          trigger: 'axis'
-        },
-        xAxis: {
-          type: 'category',
-          data: ['Jan', 'Feb', 'Mar', 'Apr']
-        },
-        yAxis: {
-          type: 'value'
-        },
-        series: [
-          {
-            name: 'Sales',
-            type: 'bar',
-            data: [1200, 1500, 1800, 2200],
-            itemStyle: {
-              color: '#FFD66B'
-            }
-          },
-          {
-            name: 'Growth',
-            type: 'line',
-            data: [1000, 1300, 1600, 2000],
-            itemStyle: {
-              color: '#FF9EAA'
-            }
-          }
-        ],
-        grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '3%',
-          containLabel: true
-        }
-      };
-      myChart.setOption(option);
-
-      const handleResize = () => {
-        myChart.resize();
-      };
-
-      window.addEventListener('resize', handleResize);
-
-      return () => {
-        window.removeEventListener('resize', handleResize);
-        myChart.dispose();
-      };
-    }
-  }, []);
+  // Home page component
+  const HomePage = () => (
+    <>
+      <Hero />
+      <FeaturedProducts 
+        onProductClick={handleProductClick}
+        calculateOffer={calculateOffer}
+      />
+    </>
+  );
 
   return (
-    <div className="min-h-screen font-['Montserrat'] bg-gradient-to-br from-rose-50 via-white to-amber-50">
-      <Navigation cartCount={cartCount} onNavigate={handleNavigationClick} currentPage={currentPage} />
-      
-      {currentPage === 'home' ? (
-        <>
-          <Hero />
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gradient-to-br from-white via-rose-50 to-white">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-gray-800">Featured Products</h2>
-              <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-                Discover our most popular juice varieties, made with premium fruits and no added sugar.
-              </p>
-            </div>
-            <div className="mt-12 grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-8">
-              {featuredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onProductClick={handleProductClick}
-                  calculateOffer={calculateOffer}
-                />
-              ))}
-            </div>
-          </div>
-        </>
-      ) : (
-        <Products />
-      )}
+    <BrowserRouter>
+      <div className="min-h-screen font-['Montserrat'] bg-gradient-to-br from-rose-50 via-white to-amber-50">
+        <Navigation cartCount={cartCount} onNavigate={handleNavigationClick} currentPage={currentPage} />
+        
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/input" element={<ProductInput />} />
+          <Route path="/cart" element={<CartPage/>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
 
-      {selectedProduct && (
-        <ProductModal
-          product={selectedProduct}
-          quantity={quantity}
-          onClose={closeModal}
-          onQuantityChange={handleQuantityChange}
-          onAddToCart={handleAddToCart}
-          calculateOffer={calculateOffer}
+        {selectedProduct && (
+          <ProductModal
+            product={selectedProduct}
+            quantity={quantity}
+            onClose={closeModal}
+            onQuantityChange={handleQuantityChange}
+            onAddToCart={handleAddToCart}
+            calculateOffer={calculateOffer}
+          />
+        )}
+
+        <Toast
+          toast={toast}
+          onClose={() => setToast(prev => ({ ...prev, visible: false }))}
         />
-      )}
-
-      <Toast
-        toast={toast}
-        onClose={() => setToast(prev => ({ ...prev, visible: false }))}
-      />
-    </div>
+      </div>
+    </BrowserRouter>
   );
 };
 

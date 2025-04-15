@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Product } from '../types';
 
 interface ProductModalProps {
@@ -6,7 +6,7 @@ interface ProductModalProps {
   quantity: number;
   onClose: () => void;
   onQuantityChange: (action: 'increase' | 'decrease') => void;
-  onAddToCart: (product: Product, quantity: number) => void;
+  onAddToCart: (product: Product, quantity: number, addons: Array<{name: string, price: number}>) => void;
   calculateOffer: (original: number, current: number) => number;
 }
 
@@ -18,6 +18,45 @@ const ProductModal: React.FC<ProductModalProps> = ({
   onAddToCart,
   calculateOffer,
 }) => {
+  // Define available add-ons
+  const availableAddons = [
+    { name: "Extra Vitamin Boost", price: 1.99 },
+    { name: "Protein Powder", price: 2.99 },
+    { name: "Chia Seeds", price: 0.99 },
+    { name: "Honey", price: 0.99 }
+  ];
+  
+  // State to track selected add-ons
+  const [selectedAddons, setSelectedAddons] = useState<Array<{name: string, price: number}>>([]);
+  // State to show feedback when item is added to cart
+  const [showAddedFeedback, setShowAddedFeedback] = useState(false);
+
+  // Handle addon selection
+  const handleAddonToggle = (addon: {name: string, price: number}) => {
+    const isSelected = selectedAddons.some(item => item.name === addon.name);
+    
+    if (isSelected) {
+      setSelectedAddons(selectedAddons.filter(item => item.name !== addon.name));
+    } else {
+      setSelectedAddons([...selectedAddons, addon]);
+    }
+  };
+
+  // Calculate total price including add-ons
+  const calculateTotalPrice = () => {
+    const addonTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
+    return (product.currentCost + addonTotal) * quantity;
+  };
+
+  // Handle add to cart with visual feedback
+  const handleAddToCart = () => {
+    onAddToCart(product, quantity, selectedAddons);
+    setShowAddedFeedback(true);
+    setTimeout(() => {
+      setShowAddedFeedback(false);
+    }, 2000);
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -50,22 +89,17 @@ const ProductModal: React.FC<ProductModalProps> = ({
             <div className="mb-8">
               <h3 className="text-xl font-semibold mb-4">Add-ons</h3>
               <div className="space-y-4 bg-gray-50 p-6 rounded-lg">
-                <label className="flex items-center space-x-3">
-                  <input type="checkbox" className="form-checkbox h-5 w-5 text-[#FF9EAA]" />
-                  <span className="text-gray-700">Extra Vitamin Boost (+$1.99)</span>
-                </label>
-                <label className="flex items-center space-x-3">
-                  <input type="checkbox" className="form-checkbox h-5 w-5 text-[#FF9EAA]" />
-                  <span className="text-gray-700">Protein Powder (+$2.99)</span>
-                </label>
-                <label className="flex items-center space-x-3">
-                  <input type="checkbox" className="form-checkbox h-5 w-5 text-[#FF9EAA]" />
-                  <span className="text-gray-700">Chia Seeds (+$0.99)</span>
-                </label>
-                <label className="flex items-center space-x-3">
-                  <input type="checkbox" className="form-checkbox h-5 w-5 text-[#FF9EAA]" />
-                  <span className="text-gray-700">Honey (+$0.99)</span>
-                </label>
+                {availableAddons.map((addon, index) => (
+                  <label key={index} className="flex items-center space-x-3">
+                    <input 
+                      type="checkbox" 
+                      className="form-checkbox h-5 w-5 text-pink-500" 
+                      checked={selectedAddons.some(item => item.name === addon.name)}
+                      onChange={() => handleAddonToggle(addon)}
+                    />
+                    <span className="text-gray-700">{addon.name} (+${addon.price.toFixed(2)})</span>
+                  </label>
+                ))}
               </div>
             </div>
 
@@ -75,6 +109,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 <button
                   onClick={() => onQuantityChange('decrease')}
                   className="px-4 py-2 text-gray-600 hover:bg-gray-100"
+                  disabled={quantity <= 1}
                 >
                   <i className="fas fa-minus"></i>
                 </button>
@@ -88,15 +123,41 @@ const ProductModal: React.FC<ProductModalProps> = ({
               </div>
             </div>
 
+            {selectedAddons.length > 0 && (
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-medium text-gray-700 mb-2">Selected Add-ons:</h4>
+                <ul className="space-y-1">
+                  {selectedAddons.map((addon, idx) => (
+                    <li key={idx} className="text-gray-600">
+                      {addon.name} (+${addon.price.toFixed(2)})
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="flex justify-between">
+                    <span className="font-medium">Total:</span>
+                    <span className="font-medium">${calculateTotalPrice().toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-4">
               <button
-                onClick={() => onAddToCart(product, quantity)}
-                className="w-full bg-[#FF9EAA] text-white py-4 px-6 rounded-md hover:bg-[#ff8a9a] transition duration-300 text-lg font-semibold"
+                onClick={handleAddToCart}
+                className="w-full bg-pink-500 text-white py-4 px-6 rounded-md hover:bg-pink-600 transition duration-300 text-lg font-semibold flex justify-center items-center"
+                disabled={showAddedFeedback}
               >
-                Add to Cart
+                {showAddedFeedback ? (
+                  <>
+                    <i className="fas fa-check mr-2"></i> Added to Cart!
+                  </>
+                ) : (
+                  'Add to Cart'
+                )}
               </button>
               <button 
-                className="w-full bg-[#FFD66B] text-white py-4 px-6 rounded-md hover:bg-[#ffc038] transition duration-300 text-lg font-semibold"
+                className="w-full bg-yellow-400 text-white py-4 px-6 rounded-md hover:bg-yellow-500 transition duration-300 text-lg font-semibold"
               >
                 Buy Now
               </button>

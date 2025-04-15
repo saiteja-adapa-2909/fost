@@ -1,19 +1,54 @@
-import React, { useState, useMemo } from 'react';
-import { allProducts } from '../data/products';
+import React, { useState, useEffect, useMemo } from 'react';
+import { getFirestore, collection, getDocs } from "firebase/firestore";
 import ProductCard from '../components/ProductCard';
 import ProductModal from '../components/ProductModal';
+import ProductInputForm from '../pages/Vendor/ProductInputForm';
 import { Product, SortOption } from '../types';
 
 const Products: React.FC = () => {
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>('price-low');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showAdminForm, setShowAdminForm] = useState(false);
 
-  const categories = ['all', ...new Set(allProducts.map(p => p.category))];
-  const allTags = [...new Set(allProducts.flatMap(p => p.tags))];
+  // Initialize Firestore
+  const db = getFirestore();
+
+  // Fetch products from Firebase
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      try {
+        const querySnapshot = await getDocs(collection(db, "products"));
+        const productsData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Product[];
+        
+        setAllProducts(productsData);
+      } catch (error) {
+        console.error("Error fetching products: ", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [db]);
+
+  const categories = useMemo(() => {
+    const categorySet = new Set(allProducts.map(p => p.category));
+    return ['all', ...categorySet];
+  }, [allProducts]);
+
+  const allTags = useMemo(() => {
+    return [...new Set(allProducts.flatMap(p => p.tags))];
+  }, [allProducts]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev =>
@@ -24,7 +59,7 @@ const Products: React.FC = () => {
   };
 
   const filteredAndSortedProducts = useMemo(() => {
-    let filtered = allProducts;
+    let filtered = [...allProducts];
 
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(p => p.category === selectedCategory);
@@ -58,7 +93,7 @@ const Products: React.FC = () => {
           return 0;
       }
     });
-  }, [selectedCategory, selectedTags, sortBy, searchQuery]);
+  }, [allProducts, selectedCategory, selectedTags, sortBy, searchQuery]);
 
   const calculateOffer = (original: number, current: number) => {
     return Math.round(((original - current) / original) * 100);
@@ -82,6 +117,10 @@ const Products: React.FC = () => {
     console.log(`Added ${qty} of ${product.title} to cart`);
   };
 
+  const toggleAdminForm = () => {
+    setShowAdminForm(prev => !prev);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-amber-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -89,7 +128,18 @@ const Products: React.FC = () => {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Our Products</h1>
           <p className="text-lg text-gray-600">Discover our range of fresh and healthy juices</p>
+          
+          {/* Admin button */}
+          <button 
+            onClick={toggleAdminForm}
+            className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors"
+          >
+            {showAdminForm ? 'Hide Admin Form' : 'Show Admin Form'}
+          </button>
         </div>
+
+        {/* Admin Form */}
+        {showAdminForm && <ProductInputForm />}
 
         {/* Filters and Search */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -155,20 +205,30 @@ const Products: React.FC = () => {
           </div>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="text-center py-12">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#FF9EAA] border-r-transparent"></div>
+            <p className="mt-4 text-gray-600">Loading products...</p>
+          </div>
+        )}
+
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-6">
-          {filteredAndSortedProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onProductClick={() => handleProductClick(product)}
-              calculateOffer={calculateOffer}
-            />
-          ))}
-        </div>
+        {!isLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-6">
+            {filteredAndSortedProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onProductClick={() => handleProductClick(product)}
+                calculateOffer={calculateOffer}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Empty State */}
-        {filteredAndSortedProducts.length === 0 && (
+        {!isLoading && filteredAndSortedProducts.length === 0 && (
           <div className="text-center py-12">
             <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
             <p className="text-gray-600">Try adjusting your filters or search terms</p>
