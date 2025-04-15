@@ -52,11 +52,11 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ onProductClick, cal
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gradient-to-br from-white via-rose-50 to-white">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-white from-white via-rose-50 to-white">
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-800">Featured Products</h2>
-        <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-          Discover our most popular juice varieties, made with premium fruits and no added sugar.
+        <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto featured-para">
+          Discover our most popular juice varieties, made with fresh fruits.
         </p>
       </div>
 
