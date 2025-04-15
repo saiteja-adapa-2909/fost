@@ -5,6 +5,7 @@ interface ProductCardProps {
   product: Product;
   onProductClick: (product: Product) => void;
   calculateOffer: (original: number, current: number) => number;
+  className?: string;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({

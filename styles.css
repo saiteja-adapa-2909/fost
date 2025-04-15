@@ -38,6 +38,10 @@ p {
   font-size: 15px !important;
 }
 
+.productspage-prod{
+  background: transparent !important;
+}
+
 .offer-class{
   width:75px;
   text-align: center;
