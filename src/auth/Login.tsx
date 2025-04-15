@@ -1,5 +1,3 @@
-// src/pages/Login.tsx
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
@@ -73,46 +71,71 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden py-12 px-4 sm:px-6 lg:px-8">
+      {/* Background image from Unsplash */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center" 
+        style={{
+          backgroundImage: "url('https://images.unsplash.com/photo-1600271886742-f049cd451bba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80')",
+          filter: "brightness(0.65)"
+        }}
+      ></div>
+      
+      {/* Overlay gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-green-900/70 to-green-800/70 z-0"></div>
+      
+      {/* Decorative bubbles */}
+      <div className="absolute top-10 left-10 w-24 h-24 bg-white opacity-20 rounded-full"></div>
+      <div className="absolute top-32 left-32 w-12 h-12 bg-white opacity-15 rounded-full"></div>
+      <div className="absolute bottom-10 right-10 w-32 h-32 bg-white opacity-10 rounded-full"></div>
+      <div className="absolute bottom-32 right-24 w-16 h-16 bg-white opacity-20 rounded-full"></div>
+      <div className="absolute top-1/4 right-1/4 w-20 h-20 bg-white opacity-10 rounded-full"></div>
+      <div className="absolute bottom-1/3 left-1/5 w-16 h-16 bg-white opacity-15 rounded-full"></div>
+      <div className="absolute top-2/3 right-1/3 w-10 h-10 bg-white opacity-20 rounded-full"></div>
+      <div className="absolute top-1/2 left-1/4 w-8 h-8 bg-white opacity-10 rounded-full"></div>
+      
+      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow-2xl relative z-10 backdrop-blur-lg bg-opacity-95">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+          <h2 className="text-center text-3xl font-extrabold text-gray-900">
+            Sign In
           </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Welcome back to the freshest experience
+          </p>
         </div>
         
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-            <span className="block sm:inline">{error}</span>
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded" role="alert">
+            <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
         
         <form className="mt-8 space-y-6" onSubmit={handleEmailLogin}>
-          <div className="rounded-md shadow-sm -space-y-px">
+          <div className="space-y-4">
             <div>
-              <label htmlFor="email-address" className="sr-only">Email address</label>
+              <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-1">Email address</label>
               <input
                 id="email-address"
                 name="email"
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-900 sm:text-sm"
+                placeholder="Your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input
                 id="password"
                 name="password"
                 type="password"
                 autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
+                className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-900 sm:text-sm"
+                placeholder="Your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -125,16 +148,16 @@ const Login: React.FC = () => {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                 Remember me
               </label>
             </div>
 
             <div className="text-sm">
-              <Link to="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Forgot your password?
+              <Link to="/forgot-password" className="font-medium text-green-700 hover:text-green-800 transition-colors">
+                Forgot password?
               </Link>
             </div>
           </div>
@@ -143,7 +166,7 @@ const Login: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-green-800 hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-700 transition-colors uppercase tracking-wider"
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
@@ -156,14 +179,14 @@ const Login: React.FC = () => {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
+              <span className="px-4 bg-white text-gray-500">Or continue with</span>
             </div>
           </div>
 
           <div className="mt-6">
             <button
               onClick={handleGoogleLogin}
-              className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
             >
               <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" width="24" height="24">
                 <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
@@ -178,15 +201,19 @@ const Login: React.FC = () => {
           </div>
         </div>
         
-        <div className="text-center mt-4">
+        <div className="text-center mt-8">
           <p className="text-sm text-gray-600">
             Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Sign up
+            <Link to="/register" className="font-medium text-green-700 hover:text-green-800 transition-colors">
+              Create account
             </Link>
           </p>
         </div>
       </div>
+      
+      {/* Additional bubble elements for visual interest */}
+      <div className="absolute bottom-1/4 left-1/3 w-6 h-6 bg-white opacity-25 rounded-full animate-pulse"></div>
+      <div className="absolute top-1/3 right-1/5 w-4 h-4 bg-white opacity-15 rounded-full"></div>
     </div>
   );
 };

@@ -70,6 +70,8 @@ const createOrder = async (orderData, paymentDetails = null) => {
         paymentStatus: 'completed',
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        shippingAddress: orderData.shippingAddress, // Ensure address is saved
+        phoneNumber: orderData.phoneNumber, // Ensure phone number is saved
         ...(paymentDetails && { paymentDetails })
       });
     });
@@ -97,6 +99,19 @@ const sendOrderConfirmationEmail = async (orderId, orderData) => {
     });
   };
 
+  // Add address information to email if available
+  const addressHtml = orderData.shippingAddress ? `
+    <div style="background-color: #F7FAFC; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+      <h2 style="color: #2D3748; margin: 0 0 15px; font-size: 18px;">Shipping Address</h2>
+      <p style="margin: 5px 0; color: #4A5568;">${orderData.shippingAddress.fullName || orderData.customerName}</p>
+      <p style="margin: 5px 0; color: #4A5568;">${orderData.shippingAddress.addressLine1 || ''}</p>
+      ${orderData.shippingAddress.addressLine2 ? `<p style="margin: 5px 0; color: #4A5568;">${orderData.shippingAddress.addressLine2}</p>` : ''}
+      <p style="margin: 5px 0; color: #4A5568;">${orderData.shippingAddress.area || ''}, ${orderData.shippingAddress.city || 'Hyderabad'}, ${orderData.shippingAddress.state || 'Telangana'}</p>
+      <p style="margin: 5px 0; color: #4A5568;">PIN: ${orderData.shippingAddress.pinCode || ''}</p>
+      <p style="margin: 5px 0; color: #4A5568;">Phone: ${orderData.phoneNumber || orderData.shippingAddress.phoneNumber || ''}</p>
+    </div>
+  ` : '';
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: orderData.customerEmail,
@@ -113,6 +128,8 @@ const sendOrderConfirmationEmail = async (orderId, orderData) => {
           <p style="margin: 5px 0; color: #4A5568;">Order Number: #${orderId.slice(-6)}</p>
           <p style="margin: 5px 0; color: #4A5568;">Date: ${formatDate()}</p>
         </div>
+
+        ${addressHtml}
 
         <div style="margin-bottom: 20px;">
           <h2 style="color: #2D3748; margin: 0 0 15px; font-size: 18px;">Order Details</h2>
@@ -164,7 +181,7 @@ const sendOrderConfirmationEmail = async (orderId, orderData) => {
 // Route to initiate payment
 app.post('/api/initiate-payment', async (req, res) => {
   try {
-    const { cartItems, userData } = req.body;
+    const { cartItems, userData, shippingAddress } = req.body;
     
     // Validate required data
     if (!cartItems || !userData || !userData.email) {
@@ -188,7 +205,10 @@ app.post('/api/initiate-payment', async (req, res) => {
     const shipping = subtotal >= 50 ? 0 : 5.99;
     const total = subtotal + shipping;
     
-    // Create transaction data
+    // Extract phone number from shipping address if available
+    const phoneNumber = shippingAddress?.phoneNumber || userData.phoneNumber || '';
+    
+    // Create transaction data with shipping address and phone number
     const transactionData = {
       userId: userData.uid || 'guest',
       items: cartItems,
@@ -200,7 +220,9 @@ app.post('/api/initiate-payment', async (req, res) => {
       status: 'pending',
       paymentStatus: 'pending',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      txnid: txnid
+      txnid: txnid,
+      shippingAddress: shippingAddress || {}, // Store shipping address
+      phoneNumber: phoneNumber // Store phone number
     };
 
     // Save transaction to Firestore
@@ -214,9 +236,9 @@ app.post('/api/initiate-payment', async (req, res) => {
       txnid: txnid,
       amount: total.toFixed(2),
       productinfo: `Order from Your Store`,
-      firstname: userData.displayName || 'Customer',
+      firstname: userData.displayName || shippingAddress?.fullName || 'Customer',
       email: userData.email,
-      phone: userData.phoneNumber || '',
+      phone: phoneNumber,
       surl: `${req.protocol}://${req.get('host')}/api/payment-success?transactionId=${txnid}`,
       furl: `${req.protocol}://${req.get('host')}/api/payment-failure?transactionId=${txnid}`,
     };
@@ -311,8 +333,6 @@ app.post('/api/payu-webhook', async (req, res) => {
 });
 
 // Payment Success Route
-// Payment Success Route
-// Payment Success Route
 app.get('/api/payment-success', async (req, res) => {
   try {
     const { transactionId } = req.query;
@@ -364,6 +384,8 @@ app.get('/api/payment-success', async (req, res) => {
       customerName: transactionData.customerName,
       status: 'pending',
       paymentStatus: 'completed',
+      shippingAddress: transactionData.shippingAddress || {}, // Ensure shipping address is saved
+      phoneNumber: transactionData.phoneNumber || '', // Ensure phone number is saved
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
@@ -486,8 +508,6 @@ app.get('/api/payment-failure', async (req, res) => {
   return res.redirect('/payment-failure');
 });
 
-// Add this route to your server.js file, before the app.listen call
-
 // Order Confirmation Route
 app.get('/order-confirmation/:orderId', async (req, res) => {
   try {
@@ -509,6 +529,19 @@ app.get('/order-confirmation/:orderId', async (req, res) => {
     
     // If you're serving HTML directly from Express
     const orderData = orderDoc.data();
+    
+    // Create address display HTML if address exists
+    const addressHtml = orderData.shippingAddress ? `
+      <div class="address-info">
+        <h2>Shipping Address</h2>
+        <p><strong>${orderData.shippingAddress.fullName || orderData.customerName}</strong></p>
+        <p>${orderData.shippingAddress.addressLine1 || ''}</p>
+        ${orderData.shippingAddress.addressLine2 ? `<p>${orderData.shippingAddress.addressLine2}</p>` : ''}
+        <p>${orderData.shippingAddress.area || ''}, ${orderData.shippingAddress.city || 'Hyderabad'}, ${orderData.shippingAddress.state || 'Telangana'}</p>
+        <p>PIN: ${orderData.shippingAddress.pinCode || ''}</p>
+        <p>Phone: ${orderData.phoneNumber || orderData.shippingAddress.phoneNumber || ''}</p>
+      </div>
+    ` : '';
     
     // Create a simple HTML page with order details
     const html = `
@@ -539,8 +572,11 @@ app.get('/order-confirmation/:orderId', async (req, res) => {
             padding-bottom: 20px;
             border-bottom: 1px solid #eee;
           }
-          .order-info {
+          .order-info, .address-info {
             margin-bottom: 20px;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
           }
           table {
             width: 100%;
@@ -585,6 +621,8 @@ app.get('/order-confirmation/:orderId', async (req, res) => {
             <p><strong>Date:</strong> ${new Date(orderData.createdAt.toDate()).toLocaleString()}</p>
             <p><strong>Status:</strong> ${orderData.status}</p>
           </div>
+          
+          ${addressHtml}
           
           <h2>Items</h2>
           <table>
